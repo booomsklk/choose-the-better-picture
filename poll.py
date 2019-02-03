@@ -7,6 +7,13 @@ import random
 import re
 import os
 
+# 开发用：default_setting 自动填上初始窗口内容节约时间
+default_setting = True
+# login 表示用户是否成功输入用户名并且正确选择目录
+login = False
+# check 表示是否选择了文件夹地址
+pro_dir_check = False
+ori_dir_check = False
 # choice为用户的选择，由0和1组成。0表示选择左图，1表示选择右图
 choice = []
 # 记录图像对与用户选择的列表
@@ -14,35 +21,64 @@ list_b = []
 # 未能获得评分的图像对列表
 item_to_delete = []
 # 获取测试者的用户名
-name = []
+name = ''
+project_folder = ''
+original_folder = ''
 
 
-def get_name(Event=None):
-    name.append(En.get())
-    root0.destroy()
+def proceed(Event=None):
+    global name
+    name = En.get()
+    # 关闭窗口或者输入为空直接结束程序
+    if len(name) == 0 or name[0] == '':
+        messagebox.showinfo(title='Error', message='请输入昵称')
+    elif ' ' in name:
+        messagebox.showinfo(title='Error', message='昵称中不可包含空格')
+    elif not ori_dir_check or not pro_dir_check:
+        messagebox.showinfo(title='Error', message='请指定项目及原始图像路径')
+    else:
+        global login
+        login = True
+        root0.destroy()
 
 
-def get_project_name(Event=None):
+def get_project_dir(Event=None):
     global project_folder
-    project = project_listbox.get(project_listbox.curselection())
-    project = '\\' + project
-    project_folder += project
-    root_select_project.destroy()
+    global pro_dir_check
+    # global label_pro_dir
+    project_dir = filedialog.askdirectory(title='选择工程文件夹', initialdir='.')
+    if project_dir == '':
+        return
+    project_folder = '.' + project_dir[project_dir.rfind('/'):len(project_dir) + 1]
+    label_pro_dir["text"] = project_folder
+    pro_dir_check = True
+    print(project_folder)
 
 
-def get_original_name(Event=None):
+def get_original_dir(Event=None):
     global original_folder
-    original = folder_listbox.get(folder_listbox.curselection())
-    original_folder = '\\' + original
-    root_select_original.destroy()
+    global ori_dir_check
+    project_abspath = os.path.abspath(project_folder)
+    original_dir = filedialog.askdirectory(title='选择原始图像文件夹', initialdir=project_folder)
+    original_abspath = os.path.abspath(original_dir)
+    if original_dir == '':
+        return
+    elif project_abspath not in original_abspath or project_abspath == original_abspath:
+        messagebox.showinfo(title='Error', message='原始图像文件夹不在项目文件夹下')
+        return
+    original_folder = original_dir[original_dir.rfind('/'):len(original_dir) + 1]
+    label_ori_dir["text"] = project_folder + original_folder
+    ori_dir_check = True
+    print(original_folder)
 
 
 # 根据方法与原始图片名，找到该方法对应的图片名
 def pic_name(var, pic):
-    file_list = os.listdir(project_folder + '\\' + var)
+    file_list = os.listdir(project_folder + '/' + var)
     for file_name in file_list:
         if pic in file_name:
             return file_name
+    print("can't find" + pic + "in folder" + var)
     return 'error'
 
 
@@ -61,7 +97,7 @@ def save():
         file.write(str(method_dict) + '\n')
         file.close()
     with open(project_folder + '/results.txt', 'a') as fw:
-        fw.write(' '.join([str(i) for i in method_count]) + ' ' + str(name[0]) + '\n')
+        fw.write(' '.join([str(i) for i in method_count]) + ' ' + name + '\n')
         fw.close()
 
 
@@ -130,53 +166,39 @@ def resize(w_box, h_box, picture):
 
 root0 = Tk()
 root0.title("login")
+
 # 昵称不要有空格
-label = Label(root0, text='请输入您的昵称（非空）:', anchor='c').grid(row=0)
-En = Entry(root0)
-En.bind('<KeyRelease-Return>', get_name)
-En.grid(row=0, column=1)
-Button(root0, text='确定', anchor='c', width=6, height=1, command=get_name).grid(row=2, column=1)
+label = Label(root0, text='昵称（非空）', anchor='c').grid(row=0)
+En = Entry(root0, width=35)
+En.grid(row=0, column=1, columnspan=2, sticky=W, pady=10)
+
+label_pro = Label(root0, text='项目路径').grid(row=1, column=0, sticky=W, padx=10)
+label_pro_dir = Label(root0, text='选择项目路径...', width=50, bg='lightgray')
+label_pro_dir.grid(row=1, column=1, sticky=W)
+Button(root0, text='浏览', width=6, height=1, command=get_project_dir).grid(row=1, column=2, padx=10, pady=5)
+
+label_ori = Label(root0, text='原始图像').grid(row=2, column=0, sticky=W, padx=10)
+label_ori_dir = Label(root0, text='选择原始图像路径...', width=50, bg='lightgray')
+label_ori_dir.grid(row=2, column=1, sticky=W)
+Button(root0, text='浏览', width=6, height=1, command=get_original_dir).grid(row=2, column=2, padx=10, pady=5)
+
+Button(root0, text='确定', anchor='c', width=6, height=1, command=proceed).grid(row=3, column=2, pady=5)
+if default_setting:
+    default_user = StringVar()
+    default_user.set("KaLuLas")
+    En['textvariable'] = default_user
+    label_pro_dir["text"] = "./RetargetMe_dataset"
+    project_folder += "./RetargetMe_dataset"
+    label_ori_dir["text"] = "./RetargetMe_dataset/original_image"
+    original_folder += "/original_image"
+    ori_dir_check = True
+    pro_dir_check = True
 root0.mainloop()
-# 关闭窗口或者输入为空直接结束程序
-if len(name) == 0 or name[0] == '':
-    exit()
 
+if not login:
+    exit()
 # 用字典为所有方法编号
-project_folder = '.'
-root_select_project = Tk()
-root_select_project.title('Open Project(Double Click)')
-# WARNING: 项目文件夹中不可包含 '.'
-project_list = [path for path in os.listdir(project_folder) if '.' not in path]
-listbox_len = 5 if len(project_list) < 5 else len(project_list)
-project_listbox = Listbox(root_select_project, width=70, height=listbox_len, selectmode="browse")
-project_listbox['font'] = ('consolas', 12)
-project_listbox['listvariable'] = StringVar(value=project_list)
-project_listbox.pack(side=TOP)
-project_listbox.bind('<Double-Button-1>', get_project_name)
-root_select_project.mainloop()
-# 没有选择项目路径关闭窗口，或者所选文件夹下没有内容，直接退出程序
-if project_folder == '.' or len([path for path in os.listdir(project_folder)]) == 0:
-    exit()
-
-
 # 用字典为所有图片编号
-original_folder = ''
-root_select_original = Tk()
-root_select_original.title('Select folder that contains original images(Double Click)')
-# WARNING: 项目中的方法文件夹中不可包含 '.'
-folder_list = [path for path in os.listdir(project_folder) if '.' not in path]
-listbox_len = 5 if len(folder_list) < 5 else len(folder_list)
-folder_listbox = Listbox(root_select_original, width=70, height=listbox_len, selectmode="browse")
-folder_listbox['font'] = ('consolas', 12)
-folder_listbox['listvariable'] = StringVar(value=folder_list)
-folder_listbox.pack(side=TOP)
-folder_listbox.bind('<Double-Button-1>', get_original_name)
-root_select_original.mainloop()
-# 没有选择项目路径关闭窗口，或者所选文件夹下没有内容，直接退出程序
-if original_folder == '' \
-        or len([path for path in os.listdir(project_folder + original_folder)]) == 0:
-    exit()
-
 path_methods = project_folder
 method_list = os.listdir(path_methods)
 method_list = [w for w in method_list if not re.search('[\.]', w)]
@@ -187,13 +209,14 @@ for i in range(1, len(method_list) + 1):
     method_dict[i] = method_list[i - 1]
 path_pictures = project_folder + original_folder
 picture_list = os.listdir(path_pictures)
-picture_list = [re.sub('\.png', '', w) for w in picture_list]
+picture_list = [re.sub('\..+', '', w) for w in picture_list]
 picture_dict = {}
 for i in range(1, len(picture_list) + 1):
     picture_dict[i] = picture_list[i - 1]
 
 method_num = len(method_list)  # 方法数量
 picture_num = len(picture_list)  # 图片数量
+
 
 for k in range(1, picture_num + 1):
     list_a = []
@@ -221,11 +244,12 @@ note_s = '''用户对方法1结果图、方法2结果图进行偏好选择，选
 item_to_delete = [item for item in list_b]
 
 for i in range(len(list_b)):
-    path_originalpic = project_folder + original_folder + "\\" + picture_dict[list_b[i][2]] + '.png'
-    path_leftpic = project_folder + "\\" + method_dict[list_b[i][0]] + "\\" + pic_name(method_dict[list_b[i][0]],
-                                                                                       picture_dict[list_b[i][2]])
-    path_rightpic = project_folder + "\\" + method_dict[list_b[i][1]] + "\\" + pic_name(method_dict[list_b[i][1]],
-                                                                                        picture_dict[list_b[i][2]])
+    path_originalpic = project_folder + original_folder + "/" + \
+                       pic_name(original_folder[1:], picture_dict[list_b[i][2]])
+    path_leftpic = project_folder + "/" + method_dict[list_b[i][0]] + "/" + pic_name(method_dict[list_b[i][0]],
+                                                                                     picture_dict[list_b[i][2]])
+    path_rightpic = project_folder + "/" + method_dict[list_b[i][1]] + "/" + pic_name(method_dict[list_b[i][1]],
+                                                                                      picture_dict[list_b[i][2]])
 
     if os.path.exists(path_originalpic) and os.path.exists(path_leftpic) and os.path.exists(path_rightpic):
         root = Tk()
