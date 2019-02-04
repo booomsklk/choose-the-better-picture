@@ -1,3 +1,5 @@
 {1: 'BiGAN', 2: 'cr', 3: 'lg', 4: 'multiop', 5: 'osa', 6: 'qp', 7: 'sc', 8: 'scl', 9: 'sv', 10: 'warp'}
-2 2 2 0 7 4 3 2 3 3 kalulas
-5 4 1 1 0 1 1 2 2 1 KaLuLas
+5 4 5 3 4 3 5 6 3 6 KaLuLas
+4 4 5 5 6 6 4 5 3 2 test0
+3 5 5 5 4 4 6 5 3 4 test1
+4 2 5 4 7 6 4 5 3 4 test0
