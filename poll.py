@@ -81,71 +81,54 @@ def check():
     return valid
 
 
+def check_integrity():
+    message = ""
+    for method in method_list:
+        for picture in picture_list:
+            if pic_name(method, picture) == 'error':
+                message += "在生成方法文件夹 " + method + " 下未找到图片 " + picture + " 对应生成结果\n"
+    if len(message):
+        messagebox.showinfo('Integrity Check', message)
+
+
 # 使用pickle进行关键信息存档
 def save():
     try:
         time_format = "_%Y%m%d%H%M"
         time_save = time.strftime(time_format)
         file_save = open(save_folder + project_folder[2:] + '_' + name + time_save + '.pkl', 'wb')
+        # 更正：以列表存储变量的形式进行存档读档
         files_need_saved = \
             [name, project_folder, original_folder, method_list, picture_list, list_b, item_to_delete, choice, step]
-        for file in files_need_saved:
-            pickle.dump(file, file_save)
+        pickle.dump(files_need_saved, file_save)
         file_save.close()
     except IOError:
         print("Function save() failed.")
-    pass
 
 
 # 读取用户存档
 def load():
-    if not os.path.exists(save_folder):
-        os.mkdir(save_folder)
-    if len(os.listdir(save_folder)) > 0:
-        if first_load:
-            answer = messagebox.askyesno('Load', '检测到存档文件\n是否进行存档读取？')
-        else:
-            answer = True
-        if answer:
-            load_dir = filedialog.askopenfilename(title='选择存档进行读取', initialdir=save_folder)
-            try:
-                # print(load_dir)
-                file_load = open(load_dir, 'rb')
-
-                global name
-                name = pickle.load(file_load)
-                global project_folder
-                project_folder = pickle.load(file_load)
-                global original_folder
-                original_folder = pickle.load(file_load)
-                global method_list
-                method_list = pickle.load(file_load)
-                global picture_list
-                picture_list = pickle.load(file_load)
-                global list_b
-                list_b = pickle.load(file_load)
-                global item_to_delete
-                item_to_delete = pickle.load(file_load)
-                global choice
-                choice = pickle.load(file_load)
-                global step
-                step = pickle.load(file_load)
-
-                if check():
-                    global load_success
-                    load_success = True
-                    global login
-                    login = True
-                    root0.destroy()
-
-            except IOError:
-                print("Function load() failed")
+    load_dir = filedialog.askopenfilename(title='选择存档进行读取', initialdir=save_folder)
+    try:
+        file_load = open(load_dir, 'rb')
+        # 更正：以列表存储变量的形式进行存档读档
+        global name, project_folder, original_folder, method_list, picture_list, list_b, item_to_delete, choice, step
+        name, project_folder, original_folder, method_list, picture_list, list_b, item_to_delete, choice, step\
+            = pickle.load(file_load)
+        file_load.close()
+        if check():
+            global load_success
+            load_success = True
+            global login
+            login = True
+            root0.destroy()
+    except IOError:
+        print("Function load() failed")
 
 
 def get_project_dir(Event=None):
     global project_folder
     global pro_dir_check
-    # global label_pro_dir
     project_dir = filedialog.askdirectory(title='选择工程文件夹', initialdir='.')
     if project_dir == '':
         return
@@ -176,20 +159,22 @@ def get_original_dir(Event=None):
 def pic_name(var, pic):
     file_list = os.listdir(project_folder + '/' + var)
     for file_name in file_list:
-        if pic in file_name:
+        if pic + '_' in file_name or pic + '.' in file_name:
             return file_name
-    print("can't find \"" + pic + "\" in folder " + var)
+    # print("can't find \"" + pic + "\" in folder " + var)
     return 'error'
 
 
 # “left”、“right”按钮所对应的指令
 def data_append():
+    global item_to_delete
     choice.append(data.get())  # 将用户选择“左”或“右”加入choice列表
+    item_to_delete.remove(list_b[step])
     if step + 1 == len(list_b):
         answer = messagebox.askyesno(title='Finished', message='项目评分完成！\n是否保存评分结果？')
         if answer:
             save_when_finished()
-        exit()
+        sys.exit()
     root.destroy()  # 终止本次循环，进入下一组选择
 
 
@@ -219,13 +204,17 @@ def on_exit():
     answer = messagebox.askyesno('Save', '是否保存当前评分进度?')
     if answer:
         save()
-    exit()
+    root.destroy()
+    sys.exit()
 
 
 def reveal_label():
-    label_2methods = Label(root, text="左图方法：" + method_dict[list_b[step][0]] + "  右图方法："
-                                      + method_dict[list_b[step][1]], width=40, height=1, justify=LEFT, font=("黑体", 11))
-    label_2methods.place(x=0, y=load_0.size[1] + 115)
+    if label_m1['text'] == "方法1结果图" and label_m2['text'] == "方法2结果图":
+        label_m1['text'] = method_dict[list_b[step][0]]
+        label_m2['text'] = method_dict[list_b[step][1]]
+    else:
+        label_m1['text'] = "方法1结果图"
+        label_m2['text'] = "方法2结果图"
 
 
 def reveal_result():
@@ -261,12 +250,17 @@ def resize(w_box, h_box, picture):
 
 
 # PHASE1: LOGIN
+
 root0 = Tk()
 root0.title("创建新项目")
+if not os.path.exists(save_folder):
+    os.mkdir(save_folder)
+# if len(os.listdir(save_folder)) > 0:
+#     answer = messagebox.askyesno('Load', '检测到存档文件\n是否进行存档读取？')
+#     if answer:
+#         load()
 
-
-# 昵称不要有空格
-label = Label(root0, text='昵称（非空）', anchor='c').grid(row=0)
+label = Label(root0, text='昵称', anchor='c').grid(row=0)
 En = Entry(root0, width=35)
 En.grid(row=0, column=1, columnspan=2, sticky=W, pady=10)
 
@@ -279,7 +273,7 @@ label_ori = Label(root0, text='原始图像').grid(row=2, column=0, sticky=W, pa
 label_ori_dir = Label(root0, text='选择原始图像路径...', width=50, bg='lightgray')
 label_ori_dir.grid(row=2, column=1, sticky=W)
 Button(root0, text='...', width=6, height=1, command=get_original_dir).grid(row=2, column=2, padx=10, pady=5)
-Button(root0, text='重新选择存档文件', width=20, height=1, command=load).grid(row=3, column=0, columnspan=2, padx=10, sticky=W)
+Button(root0, text='选择存档文件', width=15, height=1, command=load).grid(row=3, column=0, columnspan=2, padx=10, sticky=W)
 Button(root0, text='创建', anchor='c', width=6, height=1, command=proceed).grid(row=3, column=2, pady=5)
 
 # 进行自动填表的场合
@@ -294,12 +288,10 @@ if default_setting:
     ori_dir_check = True
     pro_dir_check = True
 
-load()
-first_load = False
 root0.mainloop()
 
 if not login:
-    exit()
+    sys.exit()
 
 # PHASE2: BUILD METHOD DICT & PICTURE DICT
 if not load_success and login:
@@ -347,8 +339,14 @@ if not load_success and login:
     # 随着每一个评分的完成将对应项从item_to_delete中去除
     item_to_delete = [item for item in list_b]
 
-note_s = '''用户对方法1结果图、方法2结果图进行偏好选择，选择的依据是：
-            图像是否看上去自然、美观、无明显的扭曲变形，以及完整的保持了原始图像中的重要内容'''
+try:
+    file_principle = open(project_folder + '/principle.txt', 'r')
+    note_s = file_principle.read()
+except IOError:
+    print("principle.txt not found")
+    note_s = "未指定偏好选择依据"
+# note_s = '''用户对方法1结果图、方法2结果图进行偏好选择，选择的依据是：
+#            图像是否看上去自然、美观、无明显的扭曲变形，以及完整的保持了原始图像中的重要内容'''
 
 
 # PHASE4: CHOOSE THE BETTER ONE
@@ -403,7 +401,7 @@ while step < len(list_b):
         # K: 固定窗口位置不然晃来晃去的有点麻烦
         root.geometry("+10+30")
         root.geometry('%dx%d' % (width, height))
-        root.title("Choose The Better One")
+        root.title(project_folder[2:])
 
         label_original = Label(root, text="原始图像：" + picture_dict[list_b[step][2]], width=int(load_0.size[0] / 8), height=1, bg="LightSteelBlue", font=("黑体", 11))
         label_m1 = Label(root, text="方法1结果图", width=int(load_1.size[0] / 8), height=1, bg="LightSteelBlue", font=("黑体", 11))
@@ -422,17 +420,19 @@ while step < len(list_b):
         reveal_button.place(x=35, y=load_0.size[1] + 90)
         result_button = Button(root, text="查看各类方法得分情况", width=23, height=1,  font=("黑体", 11),
                                bg="LightGrey", command=reveal_result)
-        result_button.place(x=35, y=load_0.size[1] + 150)
+        result_button.place(x=35, y=load_0.size[1] + 125)
         data = IntVar()
         # 设置“左”与“右”按钮
         left_button = Radiobutton(root, text="Left", width=int(load_1.size[0] / 9), height=1, variable=data, value=0,
                                   bg="white", font=("黑体", 12), command=data_append)
         right_button = Radiobutton(root, text="Right", width=int(load_2.size[0] / 9), height=1, variable=data, value=1,
                                    bg="white", font=("黑体", 12), command=data_append)
-
         left_button.place(x=load_0.size[0] + 100, y=load_1.size[1] + 30)
         right_button.place(x=load_0.size[0] + load_1.size[0] + 200, y=load_2.size[1] + 30)
 
+        if step == 0:
+            check_integrity()
+
         root.mainloop()
-        item_to_delete.remove(list_b[step])
+
     step += 1
