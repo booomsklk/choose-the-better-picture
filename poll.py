@@ -210,8 +210,8 @@ def on_exit():
 
 def reveal_label():
     if label_m1['text'] == "方法1结果图" and label_m2['text'] == "方法2结果图":
-        label_m1['text'] = method_dict[list_b[step][0]]
-        label_m2['text'] = method_dict[list_b[step][1]]
+        label_m1['text'] = "方法1：" + method_dict[list_b[step][0]]
+        label_m2['text'] = "方法2：" + method_dict[list_b[step][1]]
     else:
         label_m1['text'] = "方法1结果图"
         label_m2['text'] = "方法2结果图"
@@ -253,6 +253,7 @@ def resize(w_box, h_box, picture):
 
 root0 = Tk()
 root0.title("创建新项目")
+root0.configure(background = "GhostWhite")
 if not os.path.exists(save_folder):
     os.mkdir(save_folder)
 # if len(os.listdir(save_folder)) > 0:
@@ -260,17 +261,17 @@ if not os.path.exists(save_folder):
 #     if answer:
 #         load()
 
-label = Label(root0, text='昵称', anchor='c').grid(row=0)
+label = Label(root0, text='昵称', bg="GhostWhite", anchor='c').grid(row=0)
 En = Entry(root0, width=35)
 En.grid(row=0, column=1, columnspan=2, sticky=W, pady=10)
 
-label_pro = Label(root0, text='项目路径').grid(row=1, column=0, sticky=W, padx=10)
+label_pro = Label(root0, bg="GhostWhite", text='项目路径').grid(row=1, column=0, sticky=W, padx=10)
 label_pro_dir = Label(root0, text='选择项目路径...', width=50, bg='lightgray')
 label_pro_dir.grid(row=1, column=1, sticky=W)
 Button(root0, text='...', width=6, height=1, command=get_project_dir).grid(row=1, column=2, padx=10, pady=5)
 
-label_ori = Label(root0, text='原始图像').grid(row=2, column=0, sticky=W, padx=10)
-label_ori_dir = Label(root0, text='选择原始图像路径...', width=50, bg='lightgray')
+label_ori = Label(root0, bg="GhostWhite", text='原始图像').grid(row=2, column=0, sticky=W, padx=10)
+label_ori_dir = Label(root0, text='选择原始图像路径...', width=50, bg='lightgray',)
 label_ori_dir.grid(row=2, column=1, sticky=W)
 Button(root0, text='...', width=6, height=1, command=get_original_dir).grid(row=2, column=2, padx=10, pady=5)
 Button(root0, text='选择存档文件', width=15, height=1, command=load).grid(row=3, column=0, columnspan=2, padx=10, sticky=W)
@@ -338,6 +339,7 @@ if not load_success and login:
     # K：最初将list_b的值赋给item_to_delete
     # 随着每一个评分的完成将对应项从item_to_delete中去除
     item_to_delete = [item for item in list_b]
+#end if
 
 try:
     file_principle = open(project_folder + '/principle.txt', 'r')
@@ -385,15 +387,14 @@ while step < len(list_b):
         img_2.image = render_2
         img_2.place(x=load_0.size[0] + load_1.size[0] + 200, y=0)  # 设置图片放置位置
 
-        exit_button = Button(root, text="Exit", font=("黑体", 10), width=10, height=1, command=on_exit)
+        exit_button = Button(root, text="Exit", bg="White", font=("黑体", 10), width=10, height=1, command=on_exit)
         # K： 显示当前的评分进度
         exit_button.pack(side=BOTTOM, pady=10)
-        progress = "\n" + "[Progress]: " + str(step + 1) + " / " + str(len(list_b))
-        note = Label(root, text=note_s, width=100, height=3, font=("黑体", 11))
+        # progress = "\n" + "[Progress]: " + str(step + 1) + " / " + str(len(list_b))
+        note = Label(root, text=note_s, width=100, height=3, bg="Azure", font=("黑体", 11))
         note.pack(side=BOTTOM)
-        progress_label = Label(root, text=progress, width=50, height=2, font=("黑体", 9))
-        progress_label.pack(side=BOTTOM)
-        # note.place(x=0,y=max(load_0.size[1],load_1.size[1],load_2.size[1])+70)
+        # progress_label = Label(root, text=progress, width=50, height=2, font=("黑体", 9))
+        # progress_label.pack(side=BOTTOM)
 
         # 设置窗口的大小
         width = load_0.size[0] + load_1.size[0] + load_2.size[0] + 210
@@ -401,13 +402,14 @@ while step < len(list_b):
         # K: 固定窗口位置不然晃来晃去的有点麻烦
         root.geometry("+10+30")
         root.geometry('%dx%d' % (width, height))
-        root.title(project_folder[2:])
+        root.title(project_folder[2:] + "        " + str(step + 1) + " / " + str(len(list_b)))
+        root.configure(background = "Azure")
 
         label_original = Label(root, text="原始图像：" + picture_dict[list_b[step][2]], width=int(load_0.size[0] / 8), height=1, bg="LightSteelBlue", font=("黑体", 11))
         label_m1 = Label(root, text="方法1结果图", width=int(load_1.size[0] / 8), height=1, bg="LightSteelBlue", font=("黑体", 11))
         label_m2 = Label(root, text="方法2结果图", width=int(load_2.size[0] / 8), height=1, bg="LightSteelBlue", font=("黑体", 11))
-        label_picture_num = Label(root, text="原始图片总数：" + str(picture_num), width=25, height=1, justify=LEFT, font=("黑体", 11))
-        label_method_num = Label(root, text="生成方法总数：" + str(method_num), width=25, height=1, justify=LEFT, font=("黑体", 11))
+        label_picture_num = Label(root, text="原始图片总数：" + str(picture_num), width=25, height=1, bg="Azure", justify=LEFT, font=("黑体", 11))
+        label_method_num = Label(root, text="生成方法总数：" + str(method_num), width=25, height=1, bg="Azure", justify=LEFT, font=("黑体", 11))
         
         label_original.place(x=0, y=load_0.size[1] + 1)
         label_m1.place(x=load_0.size[0] + 100, y=load_1.size[1] + 1)
@@ -415,12 +417,12 @@ while step < len(list_b):
         label_picture_num.place(x=0, y=load_0.size[1] + 40)
         label_method_num.place(x=0, y=load_0.size[1] + 60)
         
-        reveal_button = Button(root, text="点击查看左右图对应方法", width=25, height=1, font=("黑体", 11),
-                               bg="LightGrey", command=reveal_label)
+        reveal_button = Button(root, text="查看左右图对应方法", width=23, height=1, font=("黑体", 11),
+                               bg="#F5FFFA", command=reveal_label)
         reveal_button.place(x=35, y=load_0.size[1] + 90)
         result_button = Button(root, text="查看各类方法得分情况", width=23, height=1,  font=("黑体", 11),
-                               bg="LightGrey", command=reveal_result)
-        result_button.place(x=35, y=load_0.size[1] + 125)
+                               bg = "#F5FFFA", command=reveal_result)
+        result_button.place(x=35, y=load_0.size[1] + 120)
         data = IntVar()
         # 设置“左”与“右”按钮
         left_button = Radiobutton(root, text="Left", width=int(load_1.size[0] / 9), height=1, variable=data, value=0,
@@ -433,6 +435,8 @@ while step < len(list_b):
         if step == 0:
             check_integrity()
 
+        root.protocol("WM_DELETE_WINDOW", on_exit)
         root.mainloop()
-
+    #end if
     step += 1
+#end while
